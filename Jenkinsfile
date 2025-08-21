@@ -1,47 +1,33 @@
 pipeline {
-  agent any
+    agent any
 
-  tools {
-    maven 'Maven_3'        // Configure in Jenkins Global Tool Configuration
-    jdk 'JDK_17'           // Configure in Jenkins as well
-  }
-
-  environment {
-    // Configure a SonarQube server named 'SonarServer' in Jenkins (Manage Jenkins > System)
-    SONARQUBE_ENV = 'SonarServer'
-    // Provide a token credential id named 'sonar-token' in Jenkins Credentials
-    SONAR_TOKEN = credentials('sonar-token')
-  }
-
-  stages {
-    stage('Checkout') {
-      steps { checkout scm }
+    tools {
+        jdk 'JDK_17'
+        maven 'Maven_3'
     }
 
-    stage('Build & Test') {
-      steps {
-        sh 'mvn -B -DskipTests=false clean verify'
-      }
-      post {
-        always {
-          junit '**/target/surefire-reports/*.xml'
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/mateusascacibas/DemoVulnerable.git'
+            }
         }
-      }
-    }
 
-    stage('SonarQube Analysis') {
-      steps {
-        withSonarQubeEnv("${SONARQUBE_ENV}") {
-          sh """mvn sonar:sonar             -Dsonar.projectKey=vulnerable-demo             -Dsonar.login=${SONAR_TOKEN}             -Dsonar.host.url=$SONAR_HOST_URL             -Dsonar.java.binaries=target/classes
-          """
+        stage('Build & Test') {
+            steps {
+                sh 'mvn clean verify'
+            }
         }
-      }
-    }
-  }
 
-  post {
-    always {
-      archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+        stage('SonarQube Analysis') {
+            environment {
+                SONARQUBE = credentials('sonar-token')
+            }
+            steps {
+                withSonarQubeEnv('SonarServer') {
+                    sh 'mvn sonar:sonar -Dsonar.projectKey=vulnerable-demo -Dsonar.login=$SONARQUBE'
+                }
+            }
+        }
     }
-  }
 }
