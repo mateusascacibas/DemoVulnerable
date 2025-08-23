@@ -66,6 +66,11 @@
                <groupId>org.owasp</groupId>
                <artifactId>dependency-check-maven</artifactId>
                <version>9.2.0</version>
+               <configuration>
+                  <failBuildOnCVSS>7</failBuildOnCVSS>
+                  <failOnError>true</failOnError>
+               </configuration>
+
         </plugin>
          <plugin>
                <groupId>org.sonarsource.scanner.maven</groupId>
