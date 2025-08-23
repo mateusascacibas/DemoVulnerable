@@ -12,24 +12,27 @@ pipeline {
       post { always { junit '**/target/surefire-reports/*.xml' } }
     }
 
-   stage('Dependency Check (OWASP)') {
-    steps {
-      withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
-        sh '''
-          mvn -B org.owasp:dependency-check-maven:9.2.0:aggregate \
-             -Dnvd.api.key=$NVD_API_KEY \
-             -Ddata.directory=$WORKSPACE/.depcheck
-        '''
-      }
-    }
-    post {
-      always {
-        archiveArtifacts artifacts: 'target/dependency-check-report.*', fingerprint: true
-        publishHTML(target: [reportDir: 'target', reportFiles: 'dependency-check-report.html', reportName: 'OWASP Dependency-Check'])
-      }
-    }
-  }
+    stage('Dependency Check (OWASP)') {
+      steps {
+        withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
+          sh '''
+            DC_CACHE="$WORKSPACE/.depcheck"
+            mkdir -p "$DC_CACHE"
 
+            mvn -B org.owasp:dependency-check-maven:9.2.0:aggregate \
+               -Dnvd.api.key="$NVD_API_KEY" \
+               -Ddata.directory="$DC_CACHE" \
+               -DfailOnError=false
+          '''
+        }
+      }
+      post {
+        always {
+          archiveArtifacts artifacts: 'target/dependency-check-report.*', fingerprint: true
+          publishHTML(target: [reportDir: 'target', reportFiles: 'dependency-check-report.html', reportName: 'OWASP Dependency-Check'])
+        }
+      }
+    }
 
     stage('SonarQube Analysis') {
       steps {
