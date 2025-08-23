@@ -19,15 +19,16 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            environment {
-                SONARQUBE = credentials('sonar-token')
+      stage('SonarQube Analysis') {
+          steps {
+            withSonarQubeEnv('SonarServer') {
+              sh '''
+                mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar \
+                   -Dsonar.projectKey=vulnerable-demo
+              '''
             }
-            steps {
-                withSonarQubeEnv('SonarServer') {
-                    sh 'mvn sonar:sonar -Dsonar.projectKey=vulnerable-demo -Dsonar.login=$SONARQUBE'
-                }
-            }
+          }
         }
+
     }
 }
